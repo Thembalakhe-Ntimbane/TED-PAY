@@ -1,0 +1,16 @@
+{% extends "mnav.html" %}
+{% block content %}
+<a class="link" href="{{ url_for('settings') }}">← Settings</a><h1 style="font-size:24px">Security</h1>
+{% if msg %}<div class="okmsg">{{ msg }}</div>{% endif %}{% if err %}<div class="err">{{ err }}</div>{% endif %}
+<h2>Two-factor authentication</h2>
+<div class="card">
+{% if u.totp_enabled %}<p><span class="pill ok">On</span> Sign-ins require a code from your authenticator app.</p>
+<form method="post"><input type="hidden" name="action" value="disable2fa"><label>Enter a code to turn off</label><input name="code" inputmode="numeric" maxlength="6"><button class="btn ghost">Turn off 2FA</button></form>
+{% elif u.totp_secret %}<p>1. Add this key to Google Authenticator, Authy or similar:</p>
+<div class="center"><img alt="2FA QR" style="width:170px" src="{{ url_for('qr', d=otp_uri) }}"></div>
+<div class="linkbox"><code>{{ u.totp_secret }}</code><button class="btn sm" onclick="copyText('{{ u.totp_secret }}',this)">Copy</button></div>
+<form method="post"><input type="hidden" name="action" value="enable2fa"><label>2. Enter the 6-digit code to switch it on</label><input name="code" inputmode="numeric" maxlength="6"><button class="btn">Turn on 2FA</button></form>
+{% else %}<p>Add a second layer of protection to sign-ins.</p><form method="post"><input type="hidden" name="action" value="start2fa"><button class="btn">Set up 2FA</button></form>{% endif %}</div>
+<h2>Change password</h2><form class="card" method="post"><input type="hidden" name="action" value="password">
+<label>Current password</label><input name="current" type="password" required><label>New password</label><input name="new" type="password" required><div class="mute">12+ characters, with a number and a symbol</div><button class="btn">Update password</button></form>
+{% endblock %}

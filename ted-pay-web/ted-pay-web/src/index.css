@@ -1,0 +1,10 @@
+@import "tailwindcss";
+@theme { --color-brand: #E50914; --color-paper: #FAF9F7; --color-ink: #111; --color-mute: #8a8a8a; --color-line: #eaeaea; --color-ok: #1b9e5a; --font-sans: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+html, body, #root { height: 100%; }
+body { margin: 0; background: #e9e7e3; color: var(--color-ink); -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
+button { touch-action: manipulation; }
+/* Brand loader: the "T" built from 5 grid blocks lighting up in sequence */
+.tblock { width: 28px; height: 28px; background: var(--color-brand); opacity: .15; animation: tb 1.5s infinite; }
+@keyframes tb { 0%, 100% { opacity: .15 } 20%, 60% { opacity: 1 } }
+@keyframes pop { 0% { transform: scale(.4); opacity: 0 } 70% { transform: scale(1.1) } 100% { transform: scale(1); opacity: 1 } }
+.pop { animation: pop .4s ease-out both; }

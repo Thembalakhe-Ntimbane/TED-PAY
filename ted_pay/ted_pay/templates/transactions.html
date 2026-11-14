@@ -1,0 +1,23 @@
+{% extends "mnav.html" %}
+{% block content %}
+<h1 style="font-size:24px">{{ t('transactions') }}</h1>
+<div class="card" style="display:flex;justify-content:space-between;align-items:center"><div><div class="mute">Wallet balance · {{ network }}</div><div class="big">{{ bal|usdt }} USDT</div></div><span class="pill blue">Live</span></div>
+<div class="tabs" id="tabs"><button class="on" data-f="all">All</button><button data-f="Pending">Pending</button><button data-f="Completed">Completed</button><button data-f="Failed">Failed</button><button data-f="Refunded">Refunded</button></div>
+<div class="card" id="list" style="padding:4px 16px">
+{% for r in rows %}{% set L = label(r.status) %}
+<div class="row" data-l="{{ L }}"><div class="ico {{ 'ok' if r.status=='completed' }}">{{ '✓' if r.status in ('completed','refunded') else ('×' if L=='Failed' else '…') }}</div>
+<div class="grow"><b>{{ 'Received' if r.status in ('completed','refunding','refunded') else 'Payment request' }}{% if r.payer_name %} · {{ r.payer_name.split()[0] }} {{ r.payer_name.split()[-1][0] }}.{% endif %}</b>
+<span class="mute">{{ r.ref }} · {{ r.created_at|stamp }}</span>
+{% if r.status=='completed' %}<button class="btn sm ghost" style="margin-top:6px" onclick="refund('{{ r.id }}',this)">Issue Refund</button> <a class="link" style="margin-left:8px" href="{{ url_for('receipt_pdf', pid=r.id) }}">PDF</a>{% endif %}</div>
+<div class="right"><b>{{ '+' if r.status in ('completed',) }}{{ r.zar_cents|zar }}</b><span class="mute">{{ r.usdt_micro|usdt }} USDT</span><br><span class="pill {{ STATUS_CLASS.get(L,'warn') }}">{{ L }}{% if r.status=='expired' %} · expired{% endif %}</span></div></div>
+{% else %}<p class="mute center" style="padding:24px">No payments yet. Create your first payment request.</p>{% endfor %}</div>
+{% endblock %}
+{% block scripts %}<script>
+let f='all';function apply(){$$('#list .row').forEach(r=>r.classList.toggle('hide',f!=='all'&&r.dataset.l!==f&&!(f==='Pending'&&r.dataset.l==='Refund pending')))}
+$$('#tabs button').forEach(b=>b.onclick=()=>{f=b.dataset.f;$$('#tabs button').forEach(x=>x.classList.toggle('on',x===b));apply()});
+async function refund(id,btn){if(!confirm('Refund this payment back to the payer on the Tether Testnet?'))return;btn.disabled=true;
+ const r=await api('/merchant/api/refund/'+id,{});if(!r.ok){alert(r.error||'Refund failed');btn.disabled=false}else live()}
+async function live(){const h=await (await fetch(location.href,{credentials:'same-origin'})).text();const d=new DOMParser().parseFromString(h,'text/html');
+ $('#list').innerHTML=$('#list',d).innerHTML;$('.big').innerHTML=$('.big',d).innerHTML;apply()}
+setInterval(live,3000);
+</script>{% endblock %}

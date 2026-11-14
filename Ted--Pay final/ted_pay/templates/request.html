@@ -1,0 +1,53 @@
+{% extends "mnav.html" %}
+{% from "macros.html" import loader, okbadge, xbadge %}
+{% block content %}
+<div id="waiting" class="hide">
+<div class="eyebrow">PAYMENT REQUEST</div><h1 style="font-size:24px">Ready for your customer.</h1>
+<div class="card center"><div class="big" style="font-size:34px">{{ p.zar_cents|zar }}</div><div style="color:var(--blue);font-weight:700">{{ p.usdt_micro|usdt }} USDT</div>
+<div class="mute">1 USDT = R {{ '%.2f'|format(p.rate) }} · rate locked ({{ rate_src }})</div></div>
+<div class="count" id="cd"><div class="bar"><i></i></div><div class="timer">1:00</div></div>
+<div class="qr"><img alt="Payment QR" src="{{ url_for('qr', d=link) }}"></div>
+<div class="center mute">Scan with the TED Pay payer app</div>
+<div class="linkbox" style="margin-top:10px"><code>{{ link }}</code><button class="btn sm" id="copy">Copy</button></div>
+<button class="btn ghost" id="nfc">Share via NFC tap</button><div class="mute center" id="nfcmsg"></div>
+<div class="card center" style="margin-top:12px"><div class="tloader" style="margin:6px auto;transform:scale(.5)"><i></i><i></i><i></i><i class="e"></i><i></i><i class="e"></i><i class="e"></i><i></i><i class="e"></i></div><b>Waiting for payment</b><div class="mute">Status is verified on {{ network }} — not on the payer’s phone.</div></div>
+<button class="btn ghost" id="cancel">Cancel request</button></div>
+
+<div id="processing" class="hide center"><div class="eyebrow">PAYMENT IN PROGRESS</div><h1>Confirming payment</h1>{{ loader() }}
+<p class="sub">The payer has authorised. Waiting for {{ network }} to confirm the transaction.</p><div class="mute" id="txp"></div></div>
+
+<div id="done" class="hide center">{{ okbadge() }}<h1>Payment received</h1>
+<div class="big">{{ p.zar_cents|zar }}</div><div style="color:var(--blue);font-weight:700">{{ p.usdt_micro|usdt }} USDT</div>
+<div class="mute" style="margin-top:6px">{{ p.ref }} · Completed · confirmed on {{ network }}</div><div class="mute" id="txd"></div>
+<a class="btn" href="{{ url_for('transactions') }}">Save to dashboard</a><a class="btn ghost" href="{{ url_for('pos') }}">New payment</a>
+<div style="display:flex;gap:8px"><button class="btn ghost" onclick="emailInvoice('{{ p.id }}')">✉ Email invoice</button><button class="btn ghost" onclick="emailInvoice('{{ p.id }}','gmail')">Gmail</button></div>
+<a class="btn ghost" href="{{ url_for('receipt_pdf', pid=p.id) }}">⬇ Download PDF proof</a></div>
+
+<div id="declined" class="hide center">{{ xbadge() }}<h1>Payment Declined.</h1><p class="sub" id="why">The payment could not be completed.</p>
+<div id="refresh" class="hide">{{ loader() }}<div class="mute">Refreshing the exchange rate…</div></div>
+<a class="btn" href="{{ url_for('pos') }}" id="again">Try again</a></div>
+{% endblock %}
+{% block scripts %}<script>
+const PID={{ p.id|tojson }},CENTS={{ p.zar_cents }};let cd=null,state='';
+function show(id){['waiting','processing','done','declined'].forEach(x=>$('#'+x).classList.toggle('hide',x!==id))}
+async function newQuote(){$('#refresh').classList.remove('hide');$('#again').classList.add('hide');
+ await new Promise(r=>setTimeout(r,2200));const r=await api('/merchant/api/request',{zar:CENTS/100});location.href=r.url||'/merchant?amount='+CENTS/100}
+function apply(s){
+ if(s.tx_hash){$('#txp').textContent='Tx '+s.tx_hash.slice(0,12)+'…'+s.tx_hash.slice(-6);$('#txd').textContent='Tx '+s.tx_hash.slice(0,12)+'…'+s.tx_hash.slice(-6)}
+ if(s.status===state)return;state=s.status;
+ if(s.status==='pending'){show('waiting');if(!cd)cd=startCountdown(s.seconds_left,$('#cd'),poll)}
+ else if(['processing','confirming'].includes(s.status)){cd&&cd.stop();show('processing')}
+ else if(['completed','refunding','refunded'].includes(s.status)){cd&&cd.stop();show('done')}
+ else if(s.status==='cancelled'){location.href='/merchant'}
+ else{cd&&cd.stop();show('declined');
+  if(s.status==='expired'){$('#why').textContent='The 60-second rate lock expired before the customer authorised.';newQuote()}
+  else $('#why').textContent='The network rejected the payment or the payer’s balance was too low.'}}
+async function poll(){const s=await api('/merchant/api/payment/'+PID+'/status');if(s.status){if(s.status==='pending'&&cd)cd.resync(s.seconds_left);apply(s)}}
+$('#copy').onclick=e=>copyText({{ link|tojson }},e.target);
+$('#cancel').onclick=async()=>{await api('/merchant/api/payment/'+PID+'/cancel',{});location.href='/merchant'};
+$('#nfc').onclick=async()=>{const m=$('#nfcmsg');
+ if(!('NDEFReader' in window)){m.textContent='NFC isn’t available here. Web NFC needs Chrome on an NFC-enabled Android phone over HTTPS. Use the QR or link.';return}
+ try{m.textContent='Hold the payer’s phone against the back of this device…';await new NDEFReader().write({records:[{recordType:'url',data:{{ link|tojson }}}]});m.textContent='Payment link sent over NFC ✓'}
+ catch(e){m.textContent='NFC permission denied or unavailable: '+e.message}};
+poll();setInterval(poll,1500);
+</script>{% endblock %}

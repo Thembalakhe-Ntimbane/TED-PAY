@@ -1,0 +1,10 @@
+node_modules/
+.env
+.env.*
+!.env.example
+.wdk/
+android/
+ios/
+*.keystore
+*.jks
+.expo/

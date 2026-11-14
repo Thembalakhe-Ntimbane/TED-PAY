@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block content %}
+{% if bad %}<h1>Link expired.</h1><p class="sub">This reset link is invalid or has expired.</p><a class="btn" href="{{ url_for('forgot') }}">Request a new link</a>
+{% else %}<h1>Choose a new password.</h1>{% if err %}<div class="err">{{ err }}</div>{% endif %}
+<form method="post"><label>New password</label><input name="password" type="password" required><label>Confirm password</label><input name="confirm" type="password" required><button class="btn">Update password</button></form>{% endif %}
+{% endblock %}

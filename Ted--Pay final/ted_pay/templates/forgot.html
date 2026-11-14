@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Reset your password.</h1><p class="sub">Enter your {{ role }} email and we’ll send you a reset link.</p>
+{% if sent %}<div class="okmsg">If that email exists, a reset link has been sent.</div>
+{% if link %}<div class="card"><div class="mute">Development mode — no email server configured. Use this link:</div><a class="link" style="word-break:break-all" href="{{ link }}">{{ link }}</a></div>{% endif %}{% endif %}
+<form method="post"><input type="hidden" name="role" value="{{ role }}"><label>Email address</label><input name="email" type="email" required><button class="btn">Send reset link</button></form>
+<p class="center"><a class="link" href="{{ '/' if role=='merchant' else url_for('payer_login') }}">Back to sign in</a></p>
+{% endblock %}

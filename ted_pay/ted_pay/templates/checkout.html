@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% from "macros.html" import loader, okbadge, xbadge %}
+{% block chip %}<span class="chip">PAYER</span>{% endblock %}
+{% block content %}
+<div id="s-pay" class="hide">
+<div class="eyebrow">PAYMENT CHECKOUT</div><h1 style="font-size:24px">Pay {{ m.business_name }}</h1><div class="mute">{{ m.city }}, {{ m.country }} · <span style="color:var(--ok)">✓ Verified merchant</span></div>
+<div class="card"><div class="mute">You’re paying</div><div class="big" style="font-size:36px">{{ p.zar_cents|zar }}</div><div style="color:var(--blue);font-weight:700">{{ p.usdt_micro|usdt }} USDT</div>
+<div class="mute">1 USDT = R {{ '%.2f'|format(p.rate) }} · rate locked</div></div>
+<div class="count" id="cd"><div class="bar"><i></i></div><div class="timer">1:00</div></div>
+<div class="card"><div class="kv"><span>Your balance</span><span>{{ bal|usdt }} USDT</span></div><div class="kv" style="border:0"><span>Network</span><span>{{ network }}</span></div></div>
+<button class="btn" id="review">Review &amp; authorise</button><a class="btn ghost" href="{{ url_for('payer_home') }}">Cancel</a></div>
+
+<div id="s-wait" class="hide center"><div class="eyebrow">PAYMENT IN PROGRESS</div><h1>Confirming your payment</h1>{{ loader() }}
+<p class="sub">Keep this screen open while {{ network }} confirms your USDT transfer.</p>
+<div class="card" style="text-align:left"><div class="kv"><span>✓ Payment submitted</span><span></span></div><div class="kv" style="border:0"><span>② Waiting for network confirmation</span><span></span></div></div></div>
+
+<div id="s-ok" class="hide center">{{ okbadge() }}<h1>Payment complete.</h1><p class="sub">Your USDT payment to {{ m.business_name }} has been confirmed.</p>
+<div class="card" style="text-align:left"><div class="kv"><span>Receipt</span><span>{{ p.ref }}</span></div><div class="kv"><span>Amount paid</span><span>{{ p.zar_cents|zar }} · {{ p.usdt_micro|usdt }} USDT</span></div><div class="kv" style="border:0"><span>Status</span><span style="color:var(--ok)">Completed</span></div></div>
+<a class="btn" href="{{ url_for('payer_home') }}">Back to wallet</a>
+<div style="display:flex;gap:8px"><button class="btn ghost" onclick="emailInvoice('{{ p.id }}')">✉ Email invoice</button><button class="btn ghost" onclick="emailInvoice('{{ p.id }}','gmail')">Gmail</button></div>
+<a class="btn ghost" href="{{ url_for('receipt_pdf', pid=p.id) }}">⬇ Download PDF proof</a></div>
+
+<div id="s-x" class="hide center">{{ xbadge() }}<h1>Payment Declined.</h1><p class="sub" id="why">This payment could not be completed.</p><a class="btn" href="{{ url_for('payer_home') }}">Back to wallet</a></div>
+
+<div class="modal" id="modal"><div class="sheet"><h2 style="margin-top:0">Confirm payment</h2>
+<div class="kv"><span>Pay to</span><span><b>{{ m.business_name }}</b> ✓</span></div><div class="kv"><span>Merchant ID</span><span>{{ meta.merchant_id }}</span></div>
+<div class="kv"><span>Amount</span><span>{{ p.zar_cents|zar }}</span></div><div class="kv"><span>Locked rate</span><span>1 USDT = R {{ '%.2f'|format(p.rate) }}</span></div>
+<div class="kv"><span>You’ll be charged</span><span><b>{{ p.usdt_micro|usdt }} USDT</b></span></div>
+<div class="count" id="cd2" style="margin-top:10px"><div class="bar"><i></i></div><div class="timer">1:00</div></div>
+<label>Enter your payment PIN</label><input id="pin" type="password" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="••••">
+<div id="perr" class="err hide"></div><button class="btn" id="auth">Authorise &amp; pay</button><button class="btn ghost" id="close">Cancel</button></div></div>
+{% endblock %}
+{% block scripts %}<script>
+const PID={{ p.id|tojson }};let state='',cd=null,cd2=null;
+function show(id){['s-pay','s-wait','s-ok','s-x'].forEach(x=>$('#'+x).classList.toggle('hide',x!==id));if(id!=='s-pay')$('#modal').classList.remove('show')}
+function expire(){if(state==='pending'||state==='')poll()}
+function apply(s){if(s.status===state)return;state=s.status;
+ if(s.status==='pending'){show('s-pay');if(!cd){cd=startCountdown(s.seconds_left,$('#cd'),expire);cd2=startCountdown(s.seconds_left,$('#cd2'),expire)}}
+ else if(s.status==='processing'||s.status==='refunding')show('s-wait');
+ else if(['completed','refunding','refunded'].includes(s.status))show('s-ok');
+ else{show('s-x');$('#why').textContent=s.status==='expired'?'The 60-second rate lock expired. Ask the merchant for a new request.':s.status==='cancelled'?'The merchant cancelled this request.':'The network rejected the payment or your balance was too low.'}}
+async function poll(){const s=await api('/payer/api/pay/'+PID+'/status');if(s.status)apply(s);else if(s.error){show('s-x');$('#why').textContent='This request is no longer available to you.'}}
+{% if not mine %}show('s-x');$('#why').textContent='This request has already been paid by someone else.';
+{% else %}poll();setInterval(()=>{if(state!=='completed'&&state!=='failed'&&state!=='expired')poll()},1500);{% endif %}
+$('#review').onclick=()=>{$('#modal').classList.add('show');$('#pin').focus()};$('#close').onclick=()=>$('#modal').classList.remove('show');
+$('#auth').onclick=async()=>{const b=$('#auth');b.disabled=true;$('#perr').classList.add('hide');
+ const r=await api('/payer/api/pay/'+PID,{pin:$('#pin').value});b.disabled=false;
+ if(r.ok){state='';show('s-wait');poll()}
+ else if(r.declined){state='x';show('s-x');$('#why').textContent=r.error}
+ else{const e=$('#perr');e.textContent=r.error||'Something went wrong';e.classList.remove('hide');$('#pin').value=''}};
+</script>{% endblock %}

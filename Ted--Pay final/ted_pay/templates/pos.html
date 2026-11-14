@@ -1,0 +1,17 @@
+{% extends "mnav.html" %}
+{% block content %}
+<div class="mute">{{ t('good_morning') }}, {{ u.name.split()[0] }}</div>
+<h1>{{ t('take_payment') }}</h1><div class="mute">{{ u.business_name }} · {{ u.city }}</div>
+<div class="card" style="margin-top:16px"><div class="mute" style="font-weight:700;letter-spacing:.08em">{{ t('amount_to_charge') }}</div>
+<div class="amount" id="amt"></div><div class="mute">USDT quote is fetched and locked for {{ ttl }} seconds when a request is created.</div></div>
+<div id="err" class="err hide"></div>
+<div class="keypad">{% for k in '123456789' %}<button data-k="{{ k }}">{{ k }}</button>{% endfor %}<button data-k="C">C</button><button data-k="0">0</button><button data-k="B">⌫</button></div>
+<button class="btn" id="go" disabled>{{ t('create_request') }}</button>
+{% endblock %}
+{% block scripts %}<script>
+let v='';const PH={{ t('enter_amount')|tojson }};
+function draw(){$('#amt').innerHTML=v?'R '+Number(v).toLocaleString('en-ZA'):'<span class="ph">'+PH+'</span>';$('#go').disabled=!+v}
+$$('.keypad button').forEach(b=>b.onclick=()=>{const k=b.dataset.k;if(k==='C')v='';else if(k==='B')v=v.slice(0,-1);else if(v.length<6&&!(v===''&&k==='0'))v+=k;draw()});
+$('#go').onclick=async()=>{$('#go').disabled=true;const r=await api('/merchant/api/request',{zar:+v});if(r.url)location.href=r.url;else{const e=$('#err');e.textContent=r.error||'Could not create request';e.classList.remove('hide');draw()}};
+const q=new URLSearchParams(location.search).get('amount');if(q)v=q.replace(/\D/g,'').slice(0,6);draw();
+</script>{% endblock %}

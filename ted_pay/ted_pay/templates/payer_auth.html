@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block chip %}<span class="chip">PAYER</span>{% endblock %}
+{% block content %}
+<h1>Pay with USDT.<br>Anywhere in Cape Town.</h1><p class="sub">Scan a merchant’s QR code and pay from your own wallet.</p>
+<div class="seg">{% if mode=='login' %}<span class="on">Sign In</span><a href="{{ url_for('payer_register', next=nxt) }}">Create wallet</a>{% else %}<a href="{{ url_for('payer_login', next=nxt) }}">Sign In</a><span class="on">Create wallet</span>{% endif %}</div>
+{% if error %}<div class="err">{{ error }}</div>{% endif %}
+<form method="post" action="{{ url_for('payer_login_post') if mode=='login' else url_for('payer_register') }}">
+<input type="hidden" name="next" value="{{ nxt }}">
+{% if mode=='register' %}<label>Full name</label><input name="name" required>{% endif %}
+<label>Email address</label><input id="em" name="email" type="email" value="{{ email }}" required>
+<label>Password</label><input id="pw" name="password" type="password" required>
+{% if mode=='register' %}<label>Payment PIN (4–6 digits)</label><input name="pin" type="password" inputmode="numeric" maxlength="6" required>
+<p class="mute">Your PIN authorises each payment. New wallets get {{ '%d'|format(500) }} test USDT from the faucet.</p>{% else %}
+<div style="text-align:right;margin-top:8px"><a class="link" href="{{ url_for('forgot', role='payer') }}">Forgot password?</a></div>{% endif %}
+<button class="btn">{{ 'Sign in' if mode=='login' else 'Create wallet' }}</button></form>
+{% if mode=='login' %}<button class="btn ghost" type="button" onclick="em.value='thando@example.com';pw.value='Payer#2026!'">Fill demo payer login</button>{% endif %}
+<p class="center" style="margin-top:18px"><a class="link" href="/">← I’m a merchant</a></p><div style="flex:1"></div>
+<p class="center mute"><b>Your wallet. Your keys.</b><br>Self-custody powered by Tether WDK.</p>
+{% endblock %}

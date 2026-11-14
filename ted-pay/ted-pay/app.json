@@ -1,0 +1,8 @@
+{
+  "android": {
+    "package": "com.thembalakhe.tedpay"
+  },
+  "plugins": [
+    "expo-build-properties"
+  ]
+}

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block chip %}<span class="chip">MERCHANT</span>{% endblock %}
+{% block content %}
+<h1>Local prices.<br>Borderless payments.</h1>
+<p class="sub">Welcome to simpler payments in ZAR and USDT.</p>
+<div class="seg"><span class="on">Sign In</span><a href="{{ url_for('merchant_register_page') }}">Register as Merchant</a></div>
+{% if error %}<div class="err">{{ error }}</div>{% endif %}
+<form method="post" action="{{ url_for('merchant_login') }}" autocomplete="on">
+<label>Email address</label><input id="em" name="email" type="email" value="{{ email }}" required autocomplete="username" placeholder="you@business.co.za">
+<label>Password</label><input id="pw" name="password" type="password" required autocomplete="current-password" placeholder="Password">
+{% if need_code %}<label>Authenticator code</label><input name="code" inputmode="numeric" maxlength="6" autofocus placeholder="6-digit code">{% endif %}
+<div style="text-align:right;margin-top:8px"><a class="link" href="{{ url_for('forgot', role='merchant') }}">Forgot password?</a></div>
+<button class="btn">Sign in</button></form>
+<p class="center" style="margin-top:18px"><a class="link" href="{{ url_for('payer_login') }}">I’m paying a merchant →</a></p>
+<div style="flex:1"></div>
+<p class="center mute"><b>Your wallet. Your keys.</b><br>Self-custody powered by Tether WDK.<br>By continuing, you agree to our Terms and Privacy Policy.</p>
+{% endblock %}

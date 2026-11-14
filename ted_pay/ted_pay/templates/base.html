@@ -1,0 +1,7 @@
+<!doctype html><html lang="{{ lang }}"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#E62B1E">
+<title>{% block title %}TED Pay{% endblock %}</title><link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}"></head>
+<body><div class="phone"><header class="top"><a class="brand" href="/"><span class="logo">T</span>TED Pay</a>{% block chip %}{% endblock %}</header>
+<main>{% block content %}{% endblock %}</main>{% block nav %}{% endblock %}</div>
+<script>if(window.self!==window.top)document.body.classList.add('embed');window.TTL={{ ttl }};</script>
+<script src="{{ url_for('static', filename='app.js') }}"></script>{% block scripts %}{% endblock %}</body></html>

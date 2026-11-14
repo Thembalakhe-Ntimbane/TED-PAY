@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block chip %}<span class="chip">MERCHANT</span>{% endblock %}
+{% block content %}
+<div class="seg"><a href="/">Sign In</a><span class="on">Register as Merchant</span></div>
+<div class="steps"><i class="on"></i><i></i><i></i></div>
+<div id="err" class="err hide"></div>
+<form id="f" enctype="multipart/form-data" style="display:flex;flex-direction:column;flex:1">
+<section data-s="1"><div class="eyebrow">STEP 1 OF 3 · YOUR BUSINESS</div><h1>Let’s meet your business.</h1><p class="sub">Set up your merchant profile to accept USDT payments.</p>
+<label>Business name</label><input name="business_name" placeholder="Cape Table Café">
+<label>Business registration number</label><input name="reg_no" placeholder="2024 / 184729 / 07">
+<label>Business email</label><input name="business_email" type="email" placeholder="you@business.co.za">
+<label>Owner full name</label><input name="owner_name" placeholder="Lungi Mbeki">
+<label>City</label><input name="city" value="Cape Town"><label>Country of registration</label><input name="country" value="South Africa">
+<p class="mute">Business details are used to verify your account.</p><button type="button" class="btn" data-next>Continue to verification</button><a class="link center" style="margin-top:12px" href="/">Back to sign in</a></section>
+<section data-s="2" class="hide"><div class="eyebrow">STEP 2 OF 3 · VERIFICATION</div><h1>Build trust. Get verified.</h1><p class="sub">A few checks help keep your business and customers safe.</p>
+<div class="card"><b>Business registration</b><div class="mute">CIPC certificate · PDF or image, up to 10 MB</div><input type="file" name="cipc" accept=".pdf,image/*" style="margin-top:8px"></div>
+<div class="card"><b>Identity document</b><div class="mute">South African ID or passport</div><input type="file" name="iddoc" accept=".pdf,image/*" style="margin-top:8px"></div>
+<div class="card"><b>Quick identity check</b><div class="mute">Confirm it’s you with a short selfie</div><input type="file" name="selfie" accept="image/*" capture="user" style="margin-top:8px"></div>
+<p class="mute">🔒 Your documents are stored privately on this server and only used for identity and business verification.</p>
+<button type="button" class="btn" data-next>Continue to security</button><button type="button" class="btn ghost" data-back>Back</button></section>
+<section data-s="3" class="hide"><div class="eyebrow">STEP 3 OF 3 · SECURITY</div><h1>Your business. Protected.</h1><p class="sub">Set a strong password and add a second layer of security.</p>
+<label>Create password</label><input name="password" type="password" autocomplete="new-password"><div class="mute">12+ characters, with a number and a symbol</div>
+<label>Confirm password</label><input name="confirm" type="password" autocomplete="new-password">
+<div class="card toggle"><div><b>Two-factor authentication</b><div class="mute">Use an authenticator app to protect sign-ins. You’ll scan a code next.</div></div><input type="checkbox" name="tfa" value="1" checked></div>
+<p class="mute">Keep your wallet recovery phrase offline. TED Pay will never ask you to share it.</p>
+<button type="submit" class="btn" id="fin">Finish setup · Open merchant portal</button><button type="button" class="btn ghost" data-back>Back</button></section>
+</form>
+{% endblock %}
+{% block scripts %}<script>
+let s=1;const secs=$$('section'),dots=$$('.steps i');
+function show(n){s=n;secs.forEach(x=>x.classList.toggle('hide',+x.dataset.s!==n));dots.forEach((d,i)=>d.classList.toggle('on',i<n));$('#err').classList.add('hide')}
+function fail(m){const e=$('#err');e.textContent=m;e.classList.remove('hide')}
+const F=n=>$('[name='+n+']').value.trim();
+$$('[data-next]').forEach(b=>b.onclick=()=>{
+ if(s===1&&!(F('business_name')&&F('reg_no')&&F('business_email').includes('@')))return fail('Please complete your business details.');
+ if(s===2&&!['cipc','iddoc','selfie'].every(n=>$('[name='+n+']').files.length))return fail('Please add all three verification items.');
+ show(s+1)});
+$$('[data-back]').forEach(b=>b.onclick=()=>show(s-1));
+$('#f').onsubmit=async e=>{e.preventDefault();$('#fin').disabled=true;
+ const r=await fetch('/merchant/register',{method:'POST',body:new FormData(e.target)});const j=await r.json();
+ if(j.ok)location.href=j.redirect;else{fail(j.error||'Something went wrong');show(j.step||3);$('#fin').disabled=false}};
+</script>{% endblock %}

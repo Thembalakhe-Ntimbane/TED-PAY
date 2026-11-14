@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block chip %}<span><span class="chip">PAYER</span> <a class="link" href="{{ url_for('payer_logout') }}">Sign out</a></span>{% endblock %}
+{% block content %}
+<div class="mute">Hi, {{ u.name.split()[0] }}</div><h1 style="font-size:24px">Your wallet.</h1>
+<div class="card"><div class="mute">{{ network }} balance</div><div class="big" id="bal" style="font-size:34px">{{ bal|usdt }} USDT</div>
+<div class="linkbox" style="margin-top:8px"><code>{{ u.wallet }}</code><button class="btn sm" onclick="copyText('{{ u.wallet }}',this)">Copy</button></div>
+<button class="btn ghost" id="faucet">+ Get 100 test USDT (faucet)</button></div>
+<h2>Pay a merchant</h2>
+<div class="card"><button class="btn" id="scan">📷 Scan QR code</button><video id="vid" class="hide" playsinline muted style="width:100%;border-radius:12px;margin-top:10px"></video>
+<button class="btn ghost" id="nfc">Tap to pay (NFC)</button><div class="mute center" id="msg" style="margin-top:6px"></div>
+<label>Or paste a payment link</label><div style="display:flex;gap:8px"><input id="link" placeholder="https://…/pay/…"><button class="btn sm" id="go">Go</button></div></div>
+<h2>Recent payments</h2><div class="card" style="padding:4px 16px">
+{% for r in rows %}{% set L = label(r.status) %}<a class="row" style="text-decoration:none;color:inherit" href="{{ url_for('checkout', pid=r.id) }}"><div class="ico {{ 'ok' if r.status=='completed' }}">{{ '✓' if r.status in ('completed','refunded') else ('×' if L=='Failed' else '…') }}</div>
+<div class="grow"><b>{{ r.business_name }}</b><span class="mute">{{ r.ref }} · {{ r.created_at|stamp }}</span></div><div class="right"><b>−{{ r.usdt_micro|usdt }} USDT</b><span class="mute">{{ r.zar_cents|zar }}</span><br><span class="pill {{ STATUS_CLASS.get(L,'warn') }}">{{ L }}</span></div></a>
+{% else %}<p class="mute center" style="padding:20px">No payments yet.</p>{% endfor %}</div>
+{% endblock %}
+{% block scripts %}<script>
+const msg=t=>$('#msg').textContent=t;
+async function open_(text){const r=await api('/payer/api/resolve',{text});if(r.url)location.href=r.url;else msg(r.error)}
+$('#go').onclick=()=>open_($('#link').value);
+$('#faucet').onclick=async()=>{await api('/payer/api/faucet',{});location.reload()};
+let stop=null;$('#scan').onclick=async()=>{try{$('#vid').classList.remove('hide');stop=await startQrScan($('#vid'),open_)}catch(e){$('#vid').classList.add('hide');msg(e.message)}};
+$('#nfc').onclick=async()=>{if(!('NDEFReader' in window))return msg('NFC isn’t available here. Web NFC needs Chrome on an NFC-enabled Android phone over HTTPS.');
+ try{const r=new NDEFReader();await r.scan();msg('Hold your phone near the merchant’s device…');r.onreading=e=>{for(const rec of e.message.records){if(rec.recordType==='url'){open_(new TextDecoder().decode(rec.data))}}}}catch(e){msg('NFC permission denied or unavailable.')}};
+</script>{% endblock %}

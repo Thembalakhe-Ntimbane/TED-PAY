@@ -1,0 +1,15 @@
+{% extends "mnav.html" %}
+{% block content %}
+<h1 style="font-size:24px">{{ t('settings') }}</h1>{% if msg %}<div class="okmsg">{{ msg }}</div>{% endif %}
+<h2>Profile</h2><form class="card" method="post" action="{{ url_for('save_profile') }}">
+<label>Business name</label><input name="business_name" value="{{ u.business_name }}"><label>Owner name</label><input name="name" value="{{ u.name }}">
+<label>Business email</label><input name="business_email" type="email" value="{{ u.business_email }}"><label>City</label><input name="city" value="{{ u.city }}">
+<div class="mute" style="margin-top:8px">Merchant ID {{ u.merchant_code }} · Reg. {{ u.reg_no }} · KYC <span class="pill ok">{{ u.kyc_status|capitalize }}</span></div><button class="btn">Save profile</button></form>
+<h2>Wallet</h2><div class="card"><div class="mute">{{ network }} balance</div><div class="big">{{ bal|usdt }} USDT</div><div class="linkbox" style="margin-top:8px"><code>{{ u.wallet }}</code><button class="btn sm" onclick="copyText('{{ u.wallet }}',this)">Copy</button></div></div>
+<h2>Security</h2><a class="btn ghost" href="{{ url_for('security') }}">Password &amp; two-factor authentication {{ '· On' if u.totp_enabled }}</a>
+<h2>{{ t('language') }}</h2><div class="card"><div class="mute" style="font-weight:700">POPULAR WITH CAPE TOWN VISITORS</div>
+{% for c,n in langs1 %}<a class="row" style="text-decoration:none;color:inherit" href="{{ url_for('set_lang', code=c) }}"><span class="grow">{{ n }}</span>{{ '✓' if lang==c }}</a>{% endfor %}
+<div class="mute" style="font-weight:700;margin-top:10px">MORE LANGUAGES</div>
+{% for c,n in langs2 %}<a class="row" style="text-decoration:none;color:inherit" href="{{ url_for('set_lang', code=c) }}"><span class="grow">{{ n }}</span>{{ '✓' if lang==c }}</a>{% endfor %}</div>
+<a class="btn ghost" href="{{ url_for('merchant_logout') }}">Sign out</a>
+{% endblock %}
